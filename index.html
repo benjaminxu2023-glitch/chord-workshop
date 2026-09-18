@@ -1155,7 +1155,7 @@
       out.push("速度："+LEVEL_META[level].tempo+"    扫弦："+LEVEL_META[level].strum);
       out.push("和弦走向："+progression.map(function(x){return x.name;}).join(" — ")+"    级数："+pattern.tokens.join(" — "));
       out.push("");
-      var lyricIndex=0, sectionCount=0, lastDegree=1;
+      var lyricIndex=0, sectionCount=0, lastDegree=1, chordBar=0;
       lines.forEach(function(line) {
         var trimmed=line.trim();
         if (!trimmed) { out.push(""); return; }
@@ -1172,7 +1172,8 @@
         var lyricBars=[];
         var manualBars=source==="manual" ? normalizeManualBars(manualLines[lyricIndex] || "",bars.length) : [];
         bars.forEach(function(bar,i) {
-          var chord=progression[i%progression.length];
+          var chord=progression[chordBar%progression.length];
+          chordBar+=1;
           chordNames.push(chord.name);
           lyricBars.push(bar.join(" "));
           if (source==="manual") noteBars.push(manualBars[i] || "-");
