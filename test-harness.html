@@ -393,6 +393,7 @@
   window.__errors = [];
   window.__acLog = [];
   window.__oscLog = [];
+  window.__freqSchedule = [];
   var origError = console.error;
   console.error = function(){
     var m = Array.prototype.map.call(arguments, String).join(' ');
@@ -408,6 +409,12 @@
     NativeAC.prototype.createOscillator = function(){
       var o = origCreateOsc.call(this);
       var origStart = o.start;
+      var origSVT = o.frequency.setValueAtTime.bind(o.frequency);
+      o.frequency.setValueAtTime = function(v, t){
+        window.__freqSchedule.push(v);
+        log('[freq] scheduled ' + Number(v).toFixed(2) + 'Hz');
+        return origSVT(v, t);
+      };
       o.start = function(){
         var f = 0;
         try { f = o.frequency.value; } catch(e){}
@@ -417,8 +424,7 @@
       };
       return o;
     };
-    window.AudioContext = function(){
-      var inst = Reflect.construct(NativeAC, Array.prototype.slice.call(arguments), NativeAC);
+    window.AudioContext = function(){      var inst = Reflect.construct(NativeAC, Array.prototype.slice.call(arguments), NativeAC);
       window.__acLog.push('created:' + inst.state);
       log('[AudioContext] created, state=' + inst.state);
       if (inst.addEventListener) inst.addEventListener('statechange', function(){
