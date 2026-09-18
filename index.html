@@ -1,0 +1,1474 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#17140f">
+  <meta name="description" content="和弦工坊：吉他和弦指法查询、分级和弦走向与歌词简谱编配工具。">
+  <title>和弦工坊｜吉他指法与简谱编配</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%2317140f' d='M32 3C17 3 7 15 7 30c0 14 10 27 25 31 15-4 25-17 25-31C57 15 47 3 32 3Z'/%3E%3Cpath fill='%23efb653' d='M29 13h6v24h-6zM21 35h22v6H21z'/%3E%3Ccircle cx='32' cy='47' r='5' fill='%23f7f0e3'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      --ink: #f7f0e3;
+      --muted: #afa796;
+      --bg: #0f0e0c;
+      --panel: #191713;
+      --panel-2: #211e18;
+      --line: #383229;
+      --accent: #efb653;
+      --accent-2: #f7d899;
+      --red: #e97861;
+      --green: #8fc39a;
+      --shadow: 0 18px 50px rgba(0,0,0,.28);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(239,182,83,.10), transparent 28rem),
+        linear-gradient(180deg, #11100d, var(--bg) 42%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 16px;
+      line-height: 1.55;
+    }
+    button, select, input, textarea { font: inherit; }
+    button, select { touch-action: manipulation; }
+    a { color: var(--accent-2); }
+    .shell { width: min(1180px, calc(100% - 28px)); margin: 0 auto; }
+    .topbar {
+      position: sticky;
+      z-index: 30;
+      top: 0;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      background: rgba(15,14,12,.88);
+      backdrop-filter: blur(18px);
+    }
+    .topbar-inner {
+      min-height: 68px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: max-content;
+      font-weight: 760;
+      letter-spacing: .04em;
+    }
+    .pick {
+      display: grid;
+      width: 36px;
+      height: 36px;
+      place-items: center;
+      color: #17140f;
+      background: var(--accent);
+      border-radius: 50% 50% 48% 52% / 40% 40% 60% 60%;
+      box-shadow: inset 0 -3px 0 rgba(0,0,0,.18);
+      transform: rotate(8deg);
+    }
+    .pick span { transform: rotate(-8deg); font-weight: 900; }
+    .tabs {
+      display: flex;
+      flex: 1;
+      gap: 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 9px 15px;
+      color: var(--muted);
+      background: transparent;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: .2s ease;
+    }
+    .tab:hover { color: var(--ink); background: rgba(255,255,255,.05); }
+    .tab[aria-selected="true"] { color: #19140b; background: var(--accent); font-weight: 700; }
+    main { padding: 30px 0 60px; }
+    .view { display: none; animation: rise .3s ease; }
+    .view.active { display: block; }
+    @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+    .eyebrow {
+      margin: 0 0 6px;
+      color: var(--accent);
+      font-size: .83rem;
+      font-weight: 750;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: 8px; font-size: clamp(1.8rem, 5vw, 3.1rem); line-height: 1.08; }
+    h2 { margin-bottom: 6px; font-size: clamp(1.35rem, 3vw, 2rem); }
+    h3 { margin-bottom: 10px; font-size: 1.08rem; }
+    .lede { max-width: 720px; margin-bottom: 24px; color: var(--muted); }
+    .grid { display: grid; gap: 18px; }
+    .finder-grid { grid-template-columns: minmax(280px, .82fr) minmax(420px, 1.18fr); align-items: stretch; }
+    .arranger-grid { grid-template-columns: minmax(310px, .82fr) minmax(420px, 1.18fr); align-items: start; }
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(145deg, rgba(35,31,25,.94), rgba(24,22,18,.96));
+      box-shadow: var(--shadow);
+    }
+    .panel-pad { padding: clamp(18px, 3vw, 28px); }
+    .controls { display: grid; gap: 14px; }
+    .controls.two { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .controls.three { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    label { display: grid; gap: 7px; color: var(--muted); font-size: .9rem; }
+    select, input[type="text"], input[type="number"], textarea {
+      width: 100%;
+      min-height: 46px;
+      border: 1px solid #4a4236;
+      border-radius: 12px;
+      outline: none;
+      color: var(--ink);
+      background: #12110e;
+      padding: 10px 12px;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    select:focus, input:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(239,182,83,.16);
+    }
+    textarea { min-height: 178px; resize: vertical; line-height: 1.7; }
+    .segmented {
+      display: flex;
+      gap: 5px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: #12110e;
+    }
+    .segmented button {
+      flex: 1;
+      border: 0;
+      border-radius: 9px;
+      padding: 9px 10px;
+      color: var(--muted);
+      background: transparent;
+      cursor: pointer;
+    }
+    .segmented button.active { color: #17130d; background: var(--accent-2); font-weight: 750; }
+    .button-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+    .btn {
+      min-height: 44px;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      padding: 10px 15px;
+      color: #1d170d;
+      background: var(--accent);
+      font-weight: 750;
+      cursor: pointer;
+      transition: transform .15s, filter .15s, border-color .15s;
+    }
+    .btn:hover { filter: brightness(1.06); transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn.secondary { color: var(--ink); background: #2a261f; border-color: #474035; }
+    .btn.ghost { color: var(--muted); background: transparent; border-color: var(--line); }
+    .btn.icon { display: inline-flex; align-items: center; gap: 8px; }
+    .btn:focus-visible, .tab:focus-visible, .chord-card:focus-visible {
+      outline: 3px solid rgba(239,182,83,.38); outline-offset: 2px;
+    }
+    .diagram-stage {
+      position: relative;
+      min-height: 510px;
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) minmax(220px, .78fr);
+      gap: 12px;
+      overflow: hidden;
+    }
+    .diagram-stage::after {
+      content: "";
+      position: absolute;
+      right: -80px;
+      bottom: -110px;
+      width: 280px;
+      height: 280px;
+      border: 46px solid rgba(239,182,83,.045);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .diagram-wrap { display: grid; place-items: center; padding: 14px; min-width: 0; }
+    .chord-title { text-align: center; }
+    .chord-title strong { display: block; font-size: clamp(2.5rem, 8vw, 4.8rem); line-height: 1; letter-spacing: -.03em; }
+    .chord-title span { color: var(--muted); }
+    #chordDiagram { width: min(100%, 320px); height: auto; filter: drop-shadow(0 18px 24px rgba(0,0,0,.2)); }
+    .chord-meta {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 26px 22px 26px 0;
+    }
+    .meta-list { display: grid; gap: 12px; margin: 18px 0; }
+    .meta-item { border-top: 1px solid var(--line); padding-top: 10px; }
+    .meta-item small { display: block; color: var(--muted); }
+    .meta-item strong { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .05em; }
+    .recent { margin-top: 20px; }
+    .chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip {
+      border: 1px solid #40392f;
+      border-radius: 999px;
+      padding: 6px 11px;
+      color: var(--muted);
+      background: rgba(255,255,255,.025);
+      cursor: pointer;
+    }
+    .chip:hover { color: var(--ink); border-color: var(--accent); }
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+    .section-head .lede { margin: 0; }
+    .flow-controls { margin-bottom: 18px; }
+    .progression-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(145px,1fr));
+      gap: 12px;
+    }
+    .chord-card {
+      position: relative;
+      min-height: 164px;
+      border: 1px solid #423a2f;
+      border-radius: 16px;
+      padding: 18px;
+      color: var(--ink);
+      background: linear-gradient(150deg, #29241c, #181612);
+      text-align: left;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    .chord-card::after {
+      content: attr(data-beat);
+      position: absolute;
+      right: 8px;
+      bottom: -18px;
+      color: rgba(239,182,83,.07);
+      font-size: 5.4rem;
+      font-weight: 900;
+    }
+    .chord-card:hover { border-color: var(--accent); }
+    .degree { color: var(--accent); font-weight: 800; }
+    .chord-card strong { display: block; margin-top: 20px; font-size: 2rem; line-height: 1; }
+    .chord-card small { display: block; margin-top: 10px; color: var(--muted); }
+    .flow-summary {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .summary-box { padding: 14px; border: 1px solid var(--line); border-radius: 13px; background: rgba(0,0,0,.12); }
+    .summary-box small { color: var(--muted); display: block; }
+    .summary-box strong { display: block; margin-top: 3px; }
+    .tip {
+      margin-top: 16px;
+      border-left: 3px solid var(--accent);
+      padding: 11px 14px;
+      color: var(--muted);
+      background: rgba(239,182,83,.06);
+      border-radius: 0 10px 10px 0;
+    }
+    .inline-checks { display: flex; flex-wrap: wrap; gap: 12px; }
+    .radio {
+      display: flex;
+      grid-template-columns: none;
+      align-items: center;
+      gap: 8px;
+      color: var(--ink);
+      cursor: pointer;
+    }
+    .radio input { accent-color: var(--accent); width: 18px; height: 18px; }
+    .helper { color: var(--muted); font-size: .84rem; }
+    .hidden { display: none !important; }
+    .score-panel { position: sticky; top: 92px; }
+    .score-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .score-toolbar h3 { margin: 0; }
+    .status { color: var(--green); font-size: .86rem; min-height: 1.4em; }
+    .score-paper {
+      min-height: 570px;
+      max-height: 70vh;
+      overflow: auto;
+      border: 1px solid #d7c9ad;
+      border-radius: 12px;
+      padding: clamp(18px, 4vw, 34px);
+      color: #252018;
+      background:
+        repeating-linear-gradient(0deg, transparent 0, transparent 31px, rgba(95,76,43,.08) 32px),
+        #f6f0e4;
+      box-shadow: inset 0 0 30px rgba(100,73,34,.08);
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", "Noto Sans Mono CJK SC", monospace;
+      font-size: clamp(.84rem, 2vw, 1rem);
+      line-height: 1.8;
+    }
+    .score-empty { color: #817563; }
+    .warning {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+      padding: 12px 14px;
+      border: 1px solid rgba(233,120,97,.32);
+      border-radius: 12px;
+      color: #e9b4a8;
+      background: rgba(233,120,97,.06);
+      font-size: .87rem;
+    }
+    .toast {
+      position: fixed;
+      z-index: 100;
+      left: 50%;
+      bottom: calc(22px + env(safe-area-inset-bottom));
+      transform: translate(-50%, 20px);
+      padding: 10px 16px;
+      border: 1px solid #63533a;
+      border-radius: 999px;
+      color: #17120b;
+      background: var(--accent-2);
+      box-shadow: 0 12px 36px rgba(0,0,0,.35);
+      opacity: 0;
+      pointer-events: none;
+      transition: .25s;
+      font-weight: 700;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%,0); }
+    .basis { margin-top: 24px; color: var(--muted); }
+    .basis summary { cursor: pointer; color: var(--ink); font-weight: 700; }
+    .basis ul { padding-left: 20px; }
+    .basis li + li { margin-top: 8px; }
+    footer { padding: 26px 0 44px; color: #847c6d; text-align: center; font-size: .85rem; }
+    @media (max-width: 860px) {
+      .finder-grid, .arranger-grid { grid-template-columns: 1fr; }
+      .score-panel { position: static; }
+      .progression-strip { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .diagram-stage { min-height: 0; }
+    }
+    @media (max-width: 620px) {
+      .shell { width: min(100% - 20px, 1180px); }
+      .topbar-inner { min-height: 62px; gap: 9px; }
+      .brand-text { display: none; }
+      main { padding-top: 22px; }
+      .controls.two, .controls.three, .flow-summary { grid-template-columns: 1fr; }
+      .diagram-stage { grid-template-columns: 1fr; }
+      .chord-meta { padding: 0 20px 22px; }
+      .progression-strip { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .chord-card { min-height: 138px; padding: 14px; }
+      .chord-card strong { margin-top: 14px; font-size: 1.65rem; }
+      .section-head { align-items: start; flex-direction: column; }
+      .button-row .btn { flex: 1 1 auto; }
+      .score-paper { max-height: none; min-height: 480px; padding: 16px; }
+    }
+    @media print {
+      body { background: white; color: black; }
+      .topbar, #chord-view, #progression-view, .arranger-grid > .panel:first-child, footer, .basis, .warning, .score-toolbar .button-row { display: none !important; }
+      main, .shell { width: 100%; padding: 0; margin: 0; }
+      #arranger-view, .arranger-grid, .score-panel { display: block !important; }
+      .score-panel { border: 0; box-shadow: none; }
+      .score-paper { max-height: none; border: 0; box-shadow: none; background: white; color: black; font-size: 11pt; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <div class="brand" aria-label="和弦工坊">
+        <span class="pick" aria-hidden="true"><span>♩</span></span>
+        <span class="brand-text">和弦工坊</span>
+      </div>
+      <nav class="tabs" aria-label="主要功能" role="tablist">
+        <button class="tab" id="tab-chord" role="tab" aria-selected="true" aria-controls="chord-view" data-view="chord">和弦指法</button>
+        <button class="tab" id="tab-progression" role="tab" aria-selected="false" aria-controls="progression-view" data-view="progression">和弦走向</button>
+        <button class="tab" id="tab-arranger" role="tab" aria-selected="false" aria-controls="arranger-view" data-view="arranger">歌词配谱</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="view active" id="chord-view" role="tabpanel" aria-labelledby="tab-chord">
+      <p class="eyebrow">Chord finder</p>
+      <h1>一眼看懂，马上按响。</h1>
+      <p class="lede">选择根音与和弦类型，查看六弦指法、组成音与推荐把位。点击“试听”可快速检查和声。</p>
+      <div class="grid finder-grid">
+        <div class="panel panel-pad">
+          <h2>查找和弦</h2>
+          <p class="lede">标准调弦 E–A–D–G–B–E</p>
+          <div class="controls two">
+            <label>根音
+              <select id="chordRoot" aria-label="和弦根音"></select>
+            </label>
+            <label>和弦类型
+              <select id="chordQuality" aria-label="和弦类型"></select>
+            </label>
+          </div>
+          <div class="button-row">
+            <button class="btn icon" id="playChord" type="button"><span aria-hidden="true">▶</span> 试听和弦</button>
+            <button class="btn secondary" id="nextVoicing" type="button">换个把位</button>
+          </div>
+          <div class="recent">
+            <h3>常用和弦</h3>
+            <div class="chip-row" id="quickChords"></div>
+          </div>
+          <div class="tip">指法数字：1 食指、2 中指、3 无名指、4 小指；○ 为空弦，× 表示不弹。</div>
+        </div>
+
+        <div class="panel diagram-stage" aria-live="polite">
+          <div class="diagram-wrap">
+            <div>
+              <div class="chord-title">
+                <strong id="chordName">C</strong>
+                <span id="chordSubtitle">C 大三和弦</span>
+              </div>
+              <svg id="chordDiagram" viewBox="0 0 260 310" role="img" aria-label="吉他和弦指法图"></svg>
+            </div>
+          </div>
+          <div class="chord-meta">
+            <h3>当前指法</h3>
+            <div class="meta-list">
+              <div class="meta-item"><small>六弦 → 一弦</small><strong id="fretText">x · 3 · 2 · 0 · 1 · 0</strong></div>
+              <div class="meta-item"><small>组成音</small><strong id="toneText">C · E · G</strong></div>
+              <div class="meta-item"><small>把位建议</small><strong id="positionText">开放把位</strong></div>
+            </div>
+            <button class="btn ghost" id="sendToFlow" type="button">用这个调开始编曲 →</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="progression-view" role="tabpanel" aria-labelledby="tab-progression">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Progression lab</p>
+          <h1>从四个和弦开始写歌。</h1>
+          <p class="lede">按调性、风格与难度生成可直接弹奏的走向。数字级数让整段移调保持清楚。</p>
+        </div>
+        <button class="btn" id="randomProgression" type="button">再来一组</button>
+      </div>
+      <div class="panel panel-pad">
+        <div class="controls three flow-controls">
+          <label>调
+            <select id="flowKey"></select>
+          </label>
+          <label>调式
+            <select id="flowMode">
+              <option value="major">大调</option>
+              <option value="minor">小调</option>
+            </select>
+          </label>
+          <label>风格
+            <select id="flowStyle">
+              <option value="pop">流行</option>
+              <option value="ballad">抒情</option>
+              <option value="folk">民谣</option>
+              <option value="rock">摇滚</option>
+              <option value="worship">敬拜</option>
+            </select>
+          </label>
+        </div>
+        <label>难度</label>
+        <div class="segmented" id="levelPicker" aria-label="和弦走向难度">
+          <button type="button" class="active" data-level="beginner">初级</button>
+          <button type="button" data-level="intermediate">中级</button>
+          <button type="button" data-level="advanced">高级</button>
+        </div>
+      </div>
+      <div style="height:18px"></div>
+      <div class="panel panel-pad">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow" id="patternLevel">Beginner · Pop</p>
+            <h2 id="patternName">黄金四和弦</h2>
+          </div>
+          <span class="helper" id="patternDegrees">1—5—6m—4</span>
+        </div>
+        <div class="progression-strip" id="progressionStrip"></div>
+        <div class="flow-summary">
+          <div class="summary-box"><small>建议拍号</small><strong id="meterText">4/4</strong></div>
+          <div class="summary-box"><small>扫弦型</small><strong id="strumText">↓ ↓↑ ↑↓↑</strong></div>
+          <div class="summary-box"><small>速度</small><strong id="tempoText">76–96 BPM</strong></div>
+        </div>
+        <div class="tip" id="patternTip">先让每个和弦保持一小节，循环四次；主歌轻弹，副歌加大动态。</div>
+        <div class="button-row">
+          <button class="btn" id="useInArranger" type="button">用此走向配歌词</button>
+          <button class="btn secondary" id="playProgression" type="button">试听走向</button>
+          <button class="btn ghost" id="copyProgression" type="button">复制</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="arranger-view" role="tabpanel" aria-labelledby="tab-arranger">
+      <p class="eyebrow">Lyrics to lead sheet</p>
+      <h1>把歌词变成可弹的编曲草稿。</h1>
+      <p class="lede">只给歌词时，工具会创作新的数字旋律与和弦草案；若是已有歌曲，请粘贴原有数字旋律，才能输出对应的带和弦简谱。</p>
+      <div class="grid arranger-grid">
+        <div class="panel panel-pad">
+          <div class="controls">
+            <label>歌名
+              <input id="songTitle" type="text" value="未命名的歌" autocomplete="off">
+            </label>
+            <label>歌词
+              <textarea id="lyricsInput" placeholder="输入歌词；空行可分段，也可写 [主歌]、[副歌] 等段落标记">[主歌]
+清晨的光落在窗边
+我带着盼望走向前
+
+[副歌]
+让心里的歌被听见
+每一步都有新的恩典</textarea>
+            </label>
+            <div>
+              <label>旋律来源</label>
+              <div class="inline-checks" style="margin-top:8px">
+                <label class="radio"><input type="radio" name="melodySource" value="auto" checked> 自动创作原创旋律</label>
+                <label class="radio"><input type="radio" name="melodySource" value="manual"> 我有数字旋律</label>
+              </div>
+            </div>
+            <label id="melodyField" class="hidden">数字旋律（每行对应一行歌词）
+              <textarea id="melodyInput" placeholder="示例：3 3 5 6 | 5 3 2 -"></textarea>
+              <span class="helper">支持数字 1–7、升降号、延音“-”与小节线“|”。</span>
+            </label>
+            <div class="controls two">
+              <label>调
+                <select id="arrangeKey"></select>
+              </label>
+              <label>调式
+                <select id="arrangeMode">
+                  <option value="major">大调</option>
+                  <option value="minor">小调</option>
+                </select>
+              </label>
+            </div>
+            <div class="controls two">
+              <label>风格
+                <select id="arrangeStyle">
+                  <option value="pop">流行</option>
+                  <option value="ballad">抒情</option>
+                  <option value="folk">民谣</option>
+                  <option value="rock">摇滚</option>
+                  <option value="worship">敬拜</option>
+                </select>
+              </label>
+              <label>难度
+                <select id="arrangeLevel">
+                  <option value="beginner">初级</option>
+                  <option value="intermediate">中级</option>
+                  <option value="advanced">高级</option>
+                </select>
+              </label>
+            </div>
+          </div>
+          <div class="button-row">
+            <button class="btn" id="generateScore" type="button">生成带和弦简谱</button>
+            <button class="btn ghost" id="loadExample" type="button">换个示例</button>
+          </div>
+        </div>
+
+        <div class="panel panel-pad score-panel">
+          <div class="score-toolbar">
+            <div>
+              <h3>编配结果</h3>
+              <div class="status" id="scoreStatus" aria-live="polite"></div>
+            </div>
+            <div class="button-row" style="margin:0">
+              <button class="btn secondary" id="copyScore" type="button">复制</button>
+              <button class="btn secondary" id="downloadScore" type="button">下载 TXT</button>
+              <button class="btn ghost" id="printScore" type="button">打印 / PDF</button>
+            </div>
+          </div>
+          <pre class="score-paper score-empty" id="scoreOutput">在左侧输入歌词，然后点击“生成带和弦简谱”。</pre>
+          <div class="warning"><span aria-hidden="true">△</span><span>自动旋律是创作草稿，不是对既有歌曲的准确扒谱。演唱前请根据实际重音、音域与版权要求调整。</span></div>
+        </div>
+      </div>
+
+      <details class="panel panel-pad basis">
+        <summary>编配依据与使用边界</summary>
+        <ul>
+          <li>和弦级数采用罗马数字/数字级数思路，便于同一走向在不同调之间移调。</li>
+          <li>初级以常见自然调式三和弦为主；中高级逐步加入七和弦、经过低音、借用和弦与次属功能。</li>
+          <li>吉他图按六弦标准调弦 E–A–D–G–B–E 计算；自动补全指法会优先较小把位跨度与较完整的和弦组成音。</li>
+          <li>理论参考：<a href="https://openmusictheory.github.io/harmonicFunctions.html" target="_blank" rel="noreferrer">Open Music Theory — Harmonic Functions</a>；<a href="https://musictheory.pugetsound.edu/mt21c/HarmonicFunction.html" target="_blank" rel="noreferrer">Music Theory for the 21st-Century Classroom — Harmonic Function</a>；<a href="https://www.musictheory.net/lessons/44" target="_blank" rel="noreferrer">musictheory.net — Roman Numeral Analysis</a>。</li>
+        </ul>
+      </details>
+    </section>
+  </main>
+
+  <footer class="shell">和弦工坊 · 所有处理均在本机浏览器完成，草稿会自动保存在当前设备。</footer>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+  (function () {
+    "use strict";
+
+    var NOTE_NAMES_SHARP = ["C","C♯","D","D♯","E","F","F♯","G","G♯","A","A♯","B"];
+    var NOTE_NAMES_FLAT = ["C","D♭","D","E♭","E","F","G♭","G","A♭","A","B♭","B"];
+    var KEY_OPTIONS = [
+      ["C",0],["C♯/D♭",1],["D",2],["D♯/E♭",3],["E",4],["F",5],
+      ["F♯/G♭",6],["G",7],["G♯/A♭",8],["A",9],["A♯/B♭",10],["B",11]
+    ];
+    var FLAT_KEYS = {1:true,3:true,5:true,8:true,10:true};
+    var QUALITY_INFO = {
+      maj:  { label:"大三和弦", suffix:"", intervals:[0,4,7] },
+      min:  { label:"小三和弦", suffix:"m", intervals:[0,3,7] },
+      "7":  { label:"属七和弦", suffix:"7", intervals:[0,4,7,10] },
+      maj7: { label:"大七和弦", suffix:"maj7", intervals:[0,4,7,11] },
+      m7:   { label:"小七和弦", suffix:"m7", intervals:[0,3,7,10] },
+      sus2: { label:"挂二和弦", suffix:"sus2", intervals:[0,2,7] },
+      sus4: { label:"挂四和弦", suffix:"sus4", intervals:[0,5,7] },
+      dim:  { label:"减三和弦", suffix:"dim", intervals:[0,3,6] },
+      aug:  { label:"增三和弦", suffix:"aug", intervals:[0,4,8] },
+      add9: { label:"加九和弦", suffix:"add9", intervals:[0,2,4,7] },
+      "6":  { label:"大六和弦", suffix:"6", intervals:[0,4,7,9] },
+      m6:   { label:"小六和弦", suffix:"m6", intervals:[0,3,7,9] }
+    };
+    var OPEN_STRINGS = [4,9,2,7,11,4];
+    var STRING_LABELS = ["E","A","D","G","B","E"];
+    var MANUAL_SHAPES = {
+      "C|maj":"x32010","C♯|maj":"x46664","D♭|maj":"x46664","D|maj":"xx0232","D♯|maj":"x68886","E♭|maj":"x68886","E|maj":"022100","F|maj":"133211","F♯|maj":"244322","G♭|maj":"244322","G|maj":"320003","G♯|maj":"466544","A♭|maj":"466544","A|maj":"x02220","A♯|maj":"x13331","B♭|maj":"x13331","B|maj":"x24442",
+      "C|min":"x35543","C♯|min":"x46654","D♭|min":"x46654","D|min":"xx0231","D♯|min":"x68876","E♭|min":"x68876","E|min":"022000","F|min":"133111","F♯|min":"244222","G♭|min":"244222","G|min":"355333","G♯|min":"466444","A♭|min":"466444","A|min":"x02210","A♯|min":"x13321","B♭|min":"x13321","B|min":"x24432",
+      "C|7":"x32310","C♯|7":"x46464","D♭|7":"x46464","D|7":"xx0212","D♯|7":"x68686","E♭|7":"x68686","E|7":"020100","F|7":"131211","F♯|7":"242322","G♭|7":"242322","G|7":"320001","G♯|7":"464544","A♭|7":"464544","A|7":"x02020","A♯|7":"x13131","B♭|7":"x13131","B|7":"x21202",
+      "C|maj7":"x32000","D|maj7":"xx0222","E|maj7":"021100","F|maj7":"xx3210","G|maj7":"320002","A|maj7":"x02120","B|maj7":"x24342",
+      "C|m7":"x35343","D|m7":"xx0211","E|m7":"020000","F|m7":"131111","G|m7":"353333","A|m7":"x02010","B|m7":"x24232",
+      "C|sus2":"x30033","D|sus2":"xx0230","E|sus2":"024400","G|sus2":"300033","A|sus2":"x02200",
+      "C|sus4":"x33011","D|sus4":"xx0233","E|sus4":"022200","G|sus4":"330013","A|sus4":"x02230",
+      "C|add9":"x32030","D|add9":"x54230","E|add9":"024100","G|add9":"320203","A|add9":"x02420"
+    };
+    var MAJOR_SCALE = [0,2,4,5,7,9,11];
+    var MINOR_SCALE = [0,2,3,5,7,8,10];
+    var DIATONIC_QUALITY = {
+      major:["maj","min","min","maj","maj","min","dim"],
+      minor:["min","dim","maj","min","maj","maj","maj"]
+    };
+    var ROMANS = ["I","II","III","IV","V","VI","VII"];
+    var LEVEL_META = {
+      beginner: { zh:"初级", en:"Beginner", strum:"↓ ↓↑ ↑↓↑", tempo:"76–96 BPM", tip:"每个和弦保持一小节，先稳定换和弦，再加入扫弦变化。" },
+      intermediate: { zh:"中级", en:"Intermediate", strum:"↓ · ↓↑ · ↑↓↑", tempo:"68–92 BPM", tip:"留意经过低音与七和弦的连接，尽量让高音声部移动更小。" },
+      advanced: { zh:"高级", en:"Advanced", strum:"低音 ↓ · ↑ × ↑↓↑", tempo:"62–88 BPM", tip:"先确认低音线，再处理借用和弦与次属和弦；转位不必六根弦全弹。" }
+    };
+    var STYLE_ZH = { pop:"流行", ballad:"抒情", folk:"民谣", rock:"摇滚", worship:"敬拜" };
+
+    var PATTERNS = {
+      major: {
+        beginner: {
+          pop:[
+            {name:"黄金四和弦", tokens:["1","5","6m","4"], feel:"明亮、稳定，适合主歌与副歌"},
+            {name:"向前推进", tokens:["6m","4","1","5"], feel:"从小调色彩进入明亮落点"}
+          ],
+          ballad:[
+            {name:"经典抒情", tokens:["1","6m","4","5"], feel:"有叙事感，结尾保留期待"},
+            {name:"温柔回环", tokens:["4","5","3m","6m"], feel:"柔和上行，适合长线旋律"}
+          ],
+          folk:[
+            {name:"木吉他循环", tokens:["1","4","1","5"], feel:"直接、朴素，适合分解和弦"},
+            {name:"公路民谣", tokens:["1","5","4","1"], feel:"稳定回到主和弦"}
+          ],
+          rock:[
+            {name:"开放式摇滚", tokens:["1","b7","4","1"], feel:"借用降七级，宽阔有力量"},
+            {name:"强拍推进", tokens:["1","4","5","4"], feel:"适合八分音符扫弦"}
+          ],
+          worship:[
+            {name:"宽阔敬拜", tokens:["4","1","5","6m"], feel:"开放、延展，适合渐强"},
+            {name:"安静回应", tokens:["1","5","4","4"], feel:"末尾停留，留出祷告空间"}
+          ]
+        },
+        intermediate: {
+          pop:[
+            {name:"低音阶梯", tokens:["1","5/7","6m7","4add9"], feel:"低音平滑连接，现代流行感"},
+            {name:"八和弦叙事", tokens:["1","5/7","6m","3m","4","1/3","2m7","5"], feel:"完整的主歌推进"}
+          ],
+          ballad:[
+            {name:"大七色彩", tokens:["1maj7","3m7","6m7","4maj7"], feel:"温暖、细腻，适合慢歌"},
+            {name:"离调回望", tokens:["1","3m7","4","4m"], feel:"借用小四级形成感伤收束"}
+          ],
+          folk:[
+            {name:"叙事桥段", tokens:["1","3m","4","2m","5","1"], feel:"六小节结构，适合歌词推进"},
+            {name:"低音行走", tokens:["1","5/7","6m","3m","4","5","1"], feel:"自然的下行低音线"}
+          ],
+          rock:[
+            {name:"混合调式", tokens:["1","b7","4","4m"], feel:"硬朗开场，借用小四级回转"},
+            {name:"悬挂动力", tokens:["1sus2","b7","4add9","1"], feel:"开放弦带来更大空间"}
+          ],
+          worship:[
+            {name:"开放延展", tokens:["1add9","5/7","6m7","4add9"], feel:"持续开放音，适合铺底"},
+            {name:"桥段上行", tokens:["2m7","3m7","4add9","5sus4","5"], feel:"逐级累积张力"}
+          ]
+        },
+        advanced: {
+          pop:[
+            {name:"次属链条", tokens:["1maj7","3(7)","6m7","2(7)","2m7","5(7)"], feel:"次属和弦推动到二级与六级"},
+            {name:"半音经过", tokens:["1maj7","#1dim","2m7","5(7)"], feel:"升一级减和弦连接主与二级"}
+          ],
+          ballad:[
+            {name:"电影式回转", tokens:["1maj7","3(7)","6m7","5m7","1(7)","4maj7","4m6","1"], feel:"浓郁色彩与借用小四级"},
+            {name:"降三惊喜", tokens:["1maj7","b3maj7","2m7","5(7)"], feel:"色彩突变后回到属功能"}
+          ],
+          folk:[
+            {name:"调式借用", tokens:["1","b7","4","4m","1/5","5(7)"], feel:"传统骨架中加入借用和声"},
+            {name:"循环低音", tokens:["1","5/7","b7","4/6","4m6","1/5"], feel:"低音线主导的编配"}
+          ],
+          rock:[
+            {name:"史诗推进", tokens:["1","b7","4","b6","b7","1"], feel:"调式借用带来厚重推进"},
+            {name:"张力主导", tokens:["1sus2","b3","b7","4","4m","1"], feel:"大小调色彩交错"}
+          ],
+          worship:[
+            {name:"福音转回", tokens:["1maj7","3(7)","6m7","5m7","1(7)","4maj7","#4dim","1/5","5(7)"], feel:"丰富转位与次属功能"},
+            {name:"上行呼应", tokens:["2m7","3m7","4maj7","#4dim","1/5","6m7","2(7)","5(7)"], feel:"低音持续上行后回到属和弦"}
+          ]
+        }
+      },
+      minor: {
+        beginner: {
+          pop:[
+            {name:"小调流行", tokens:["1","6","3","7"], feel:"宽广、带一点忧郁"},
+            {name:"暗色回环", tokens:["1","7","6","7"], feel:"稳定的循环张力"}
+          ],
+          ballad:[{name:"小调叙事", tokens:["1","4","6","5"], feel:"属和弦把情绪带回主和弦"}],
+          folk:[{name:"小调民谣", tokens:["1","3","7","6"], feel:"适合分解和弦与低声部旋律"}],
+          rock:[{name:"小调摇滚", tokens:["1","6","7","1"], feel:"三和弦直接推动"}],
+          worship:[{name:"小调祷告", tokens:["1","6","3","7"], feel:"克制而有盼望的循环"}]
+        },
+        intermediate: {
+          pop:[{name:"小调七和弦", tokens:["1m7","6maj7","3maj7","7"], feel:"更柔和的暗色流行"}],
+          ballad:[{name:"和声小调回归", tokens:["1m7","4m7","2dim","5(7)"], feel:"属七明确回到小调主和弦"}],
+          folk:[{name:"低音叙事", tokens:["1","7/2","6","5(7)"], feel:"下降色彩与强回归"}],
+          rock:[{name:"调式动力", tokens:["1","b7","b6","5"], feel:"沉稳、有重量的推进"}],
+          worship:[{name:"小调延展", tokens:["1m7","6add9","3","7sus4"], feel:"开放音减轻暗色重量"}]
+        },
+        advanced: {
+          pop:[{name:"小调次属", tokens:["1m7","3(7)","6maj7","2dim","5(7)"], feel:"次属色彩与属功能结合"}],
+          ballad:[{name:"半音低音", tokens:["1m7","7/2","b6maj7","5(7)"], feel:"低音下行形成电影感"}],
+          folk:[{name:"古典回声", tokens:["1m","4m","7","3","6","2dim","5(7)","1m"], feel:"完整的小调功能循环"}],
+          rock:[{name:"暗色借用", tokens:["1m","b6","b3","b7","5(7)"], feel:"自然小调与和声小调交替"}],
+          worship:[{name:"盼望转折", tokens:["1m7","6maj7","3","7","4m7","5(7)","1m"], feel:"从暗色逐步回到稳定主和弦"}]
+        }
+      }
+    };
+
+    var state = {
+      chordRoot: 0,
+      quality: "maj",
+      voicingIndex: 0,
+      voicings: [],
+      level: "beginner",
+      patternIndex: 0,
+      pattern: null,
+      progression: [],
+      scoreText: ""
+    };
+
+    function $(id) { return document.getElementById(id); }
+    function mod(n,m) { return ((n % m) + m) % m; }
+    function nameFor(pc, preferFlat) { return (preferFlat ? NOTE_NAMES_FLAT : NOTE_NAMES_SHARP)[mod(pc,12)]; }
+    function plainRootLabel(label) { return label.split("/")[0]; }
+    function pcForLabel(label) {
+      var clean = plainRootLabel(label);
+      var all = {"C":0,"C♯":1,"D♭":1,"D":2,"D♯":3,"E♭":3,"E":4,"F":5,"F♯":6,"G♭":6,"G":7,"G♯":8,"A♭":8,"A":9,"A♯":10,"B♭":10,"B":11};
+      return all[clean];
+    }
+    function chordDisplay(rootPc, quality, preferFlat) {
+      var q = QUALITY_INFO[quality] || QUALITY_INFO.maj;
+      return nameFor(rootPc, preferFlat) + q.suffix;
+    }
+    function parseShape(shape) {
+      return shape.split("").map(function (v) { return v === "x" ? -1 : Number(v); });
+    }
+    function shapeKey(rootPc, quality, preferFlat) {
+      return nameFor(rootPc, preferFlat) + "|" + quality;
+    }
+    function unique(arr) {
+      return arr.filter(function (v,i) { return arr.indexOf(v) === i; });
+    }
+    function voicingSignature(v) { return v.join(","); }
+
+    function generateVoicings(rootPc, quality) {
+      var info = QUALITY_INFO[quality] || QUALITY_INFO.maj;
+      var target = info.intervals.map(function (x) { return mod(rootPc + x,12); });
+      var results = [];
+      var windows = [[1,4],[3,6],[5,8],[7,10],[9,12]];
+
+      windows.forEach(function (window, wi) {
+        var options = OPEN_STRINGS.map(function (openPc) {
+          var opts = [-1];
+          if (wi === 0 && target.indexOf(openPc) >= 0) opts.push(0);
+          for (var fret = window[0]; fret <= window[1]; fret++) {
+            if (target.indexOf(mod(openPc + fret,12)) >= 0) opts.push(fret);
+          }
+          return opts;
+        });
+
+        function walk(index, current) {
+          if (index === 6) {
+            var sounded = current.map(function(v,i){ return v >= 0 ? mod(OPEN_STRINGS[i] + v,12) : null; }).filter(function(v){ return v !== null; });
+            if (sounded.length < 4) return;
+            if (target.some(function(pc){ return sounded.indexOf(pc) < 0; })) return;
+            var first = current.findIndex(function(v){ return v >= 0; });
+            if (first < 0) return;
+            var bassPc = mod(OPEN_STRINGS[first] + current[first],12);
+            var positives = current.filter(function(v){ return v > 0; });
+            var span = positives.length ? Math.max.apply(null, positives) - Math.min.apply(null, positives) : 0;
+            if (span > 4) return;
+            var mutes = current.filter(function(v){ return v < 0; }).length;
+            var opens = current.filter(function(v){ return v === 0; }).length;
+            var rootBass = bassPc === rootPc ? 0 : 11;
+            var maxFret = positives.length ? Math.max.apply(null, positives) : 0;
+            var score = rootBass + span * 2.4 + mutes * 2 + maxFret * .35 - opens * .8;
+            results.push({ frets:current.slice(), score:score });
+            return;
+          }
+          options[index].forEach(function (fret) {
+            current.push(fret);
+            walk(index + 1, current);
+            current.pop();
+          });
+        }
+        walk(0,[]);
+      });
+
+      results.sort(function(a,b){ return a.score - b.score; });
+      var seen = {};
+      var output = [];
+      results.forEach(function (item) {
+        var sig = voicingSignature(item.frets);
+        if (!seen[sig] && output.length < 8) {
+          seen[sig] = true;
+          output.push(item.frets);
+        }
+      });
+      return output;
+    }
+
+    function getVoicings(rootPc, quality, preferFlat) {
+      var output = [];
+      var manual = MANUAL_SHAPES[shapeKey(rootPc,quality,preferFlat)];
+      if (!manual) {
+        manual = MANUAL_SHAPES[shapeKey(rootPc,quality,!preferFlat)];
+      }
+      if (manual) output.push(parseShape(manual));
+      generateVoicings(rootPc,quality).forEach(function (v) {
+        if (!output.some(function (x) { return voicingSignature(x) === voicingSignature(v); })) output.push(v);
+      });
+      return output.length ? output : [[-1,-1,-1,-1,-1,-1]];
+    }
+
+    function assignFingers(frets) {
+      var positions = [];
+      frets.forEach(function (fret,string) {
+        if (fret > 0) positions.push({fret:fret,string:string});
+      });
+      positions.sort(function(a,b){ return a.fret - b.fret || a.string - b.string; });
+      var fingers = {};
+      var next = 1;
+      var minFret = positions.length ? positions[0].fret : 0;
+      var sameMin = positions.filter(function(p){ return p.fret === minFret; });
+      var barre = sameMin.length >= 3 ? {fret:minFret, start:Math.min.apply(null,sameMin.map(function(p){return p.string;})), end:Math.max.apply(null,sameMin.map(function(p){return p.string;}))} : null;
+      positions.forEach(function (p) {
+        if (barre && p.fret === barre.fret) fingers[p.string] = 1;
+        else {
+          if (barre && next === 1) next = 2;
+          fingers[p.string] = Math.min(next,4);
+          next += 1;
+        }
+      });
+      return { fingers:fingers, barre:barre };
+    }
+
+    function renderChord() {
+      var rootSelect = $("chordRoot");
+      var qualitySelect = $("chordQuality");
+      state.chordRoot = Number(rootSelect.value);
+      state.quality = qualitySelect.value;
+      var preferFlat = !!FLAT_KEYS[state.chordRoot];
+      state.voicings = getVoicings(state.chordRoot,state.quality,preferFlat);
+      state.voicingIndex = mod(state.voicingIndex,state.voicings.length);
+      var frets = state.voicings[state.voicingIndex];
+      var info = QUALITY_INFO[state.quality];
+      var chordName = chordDisplay(state.chordRoot,state.quality,preferFlat);
+      $("chordName").textContent = chordName;
+      $("chordSubtitle").textContent = nameFor(state.chordRoot,preferFlat) + " " + info.label;
+      $("fretText").textContent = frets.map(function(v){return v < 0 ? "x" : v;}).join(" · ");
+      $("toneText").textContent = info.intervals.map(function(x){return nameFor(state.chordRoot+x,preferFlat);}).join(" · ");
+      var positives = frets.filter(function(v){return v > 0;});
+      var minFret = positives.length ? Math.min.apply(null,positives) : 0;
+      $("positionText").textContent = minFret <= 1 ? "开放把位" : "第 " + minFret + " 把位";
+      drawDiagram(frets,chordName);
+      saveDraft();
+    }
+
+    function svgEl(tag, attrs, text) {
+      var el = document.createElementNS("http://www.w3.org/2000/svg",tag);
+      Object.keys(attrs || {}).forEach(function(k){ el.setAttribute(k,attrs[k]); });
+      if (text != null) el.textContent = text;
+      return el;
+    }
+
+    function drawDiagram(frets,chordName) {
+      var svg = $("chordDiagram");
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      svg.setAttribute("aria-label", chordName + " 吉他指法图");
+      var positives = frets.filter(function(v){return v > 0;});
+      var minPos = positives.length ? Math.min.apply(null,positives) : 1;
+      var maxPos = positives.length ? Math.max.apply(null,positives) : 4;
+      var base = maxPos <= 4 ? 1 : minPos;
+      if (maxPos - base > 4) base = maxPos - 3;
+      var x0 = 42, gap = 35, top = 60, fretGap = 43;
+
+      if (base > 1) svg.appendChild(svgEl("text",{x:14,y:top+28,fill:"#afa796","font-size":"13","font-weight":"700"},String(base)+"fr"));
+      for (var f = 0; f <= 4; f++) {
+        svg.appendChild(svgEl("line",{x1:x0,y1:top+f*fretGap,x2:x0+gap*5,y2:top+f*fretGap,stroke:f===0&&base===1?"#efb653":"#7d7260","stroke-width":f===0&&base===1?"7":"2","stroke-linecap":"round"}));
+      }
+      for (var s = 0; s < 6; s++) {
+        svg.appendChild(svgEl("line",{x1:x0+s*gap,y1:top,x2:x0+s*gap,y2:top+4*fretGap,stroke:"#b8aa91","stroke-width":String(1.6+s*.12)}));
+        svg.appendChild(svgEl("text",{x:x0+s*gap,y:top+4*fretGap+30,fill:"#afa796","font-size":"13","text-anchor":"middle"},STRING_LABELS[s]));
+        var mark = frets[s] === -1 ? "×" : frets[s] === 0 ? "○" : "";
+        if (mark) svg.appendChild(svgEl("text",{x:x0+s*gap,y:36,fill:frets[s]===-1?"#e97861":"#f7f0e3","font-size":"21","font-weight":"700","text-anchor":"middle"},mark));
+      }
+      var assignment = assignFingers(frets);
+      var barre = assignment.barre;
+      if (barre && barre.fret >= base && barre.fret <= base+3) {
+        var by = top + (barre.fret-base+.5)*fretGap;
+        svg.appendChild(svgEl("line",{x1:x0+barre.start*gap,x2:x0+barre.end*gap,y1:by,y2:by,stroke:"#efb653","stroke-width":"27","stroke-linecap":"round"}));
+        svg.appendChild(svgEl("text",{x:(x0+barre.start*gap+x0+barre.end*gap)/2,y:by+5,fill:"#17140f","font-size":"14","font-weight":"900","text-anchor":"middle"},"1"));
+      }
+      frets.forEach(function(fret,string){
+        if (fret <= 0 || fret < base || fret > base+3) return;
+        if (barre && fret===barre.fret && string>=barre.start && string<=barre.end) return;
+        var cx=x0+string*gap, cy=top+(fret-base+.5)*fretGap;
+        svg.appendChild(svgEl("circle",{cx:cx,cy:cy,r:"14",fill:"#efb653",stroke:"#f7d899","stroke-width":"1.5"}));
+        svg.appendChild(svgEl("text",{x:cx,y:cy+5,fill:"#17140f","font-size":"14","font-weight":"900","text-anchor":"middle"},String(assignment.fingers[string] || "")));
+      });
+    }
+
+    function parseToken(token, mode) {
+      var cleaned = token.replace(/\s/g,"");
+      var secondary = cleaned.match(/^([b#]?)([1-7])\(([^)]+)\)(?:\/([b#]?[1-7]))?$/);
+      var regular = cleaned.match(/^([b#]?)([1-7])([a-z0-9+°]*)(?:\/([b#]?[1-7]))?$/i);
+      var m = secondary || regular;
+      if (!m) return {degree:1,alt:0,quality:"maj",bass:null,token:token};
+      var alt = m[1] === "b" ? -1 : m[1] === "#" ? 1 : 0;
+      var degree = Number(m[2]);
+      var rawQuality = secondary ? m[3] : m[3];
+      var bassRaw = secondary ? m[4] : m[4];
+      var quality = normalizeQuality(rawQuality,alt !== 0 && !rawQuality ? "maj" : DIATONIC_QUALITY[mode][degree-1]);
+      return {degree:degree,alt:alt,quality:quality,bass:bassRaw || null,token:token};
+    }
+    function normalizeQuality(raw,fallback) {
+      if (!raw) return fallback || "maj";
+      var map = {"m":"min","min":"min","m7":"m7","7":"7","maj7":"maj7","dim":"dim","°":"dim","aug":"aug","+":"aug","sus2":"sus2","sus4":"sus4","add9":"add9","m6":"m6","6":"6"};
+      return map[raw] || fallback || "maj";
+    }
+    function tokenChord(token,keyPc,mode) {
+      var parsed = parseToken(token,mode);
+      var scale = mode === "minor" ? MINOR_SCALE : MAJOR_SCALE;
+      var rootPc = mod(keyPc + scale[parsed.degree-1] + parsed.alt,12);
+      var preferFlat = !!FLAT_KEYS[keyPc] || parsed.alt < 0;
+      var name = chordDisplay(rootPc,parsed.quality,preferFlat);
+      if (parsed.bass) {
+        var bm = parsed.bass.match(/^([b#]?)([1-7])$/);
+        if (bm) {
+          var ba = bm[1] === "b" ? -1 : bm[1] === "#" ? 1 : 0;
+          var bd = Number(bm[2]);
+          name += "/" + nameFor(keyPc + scale[bd-1] + ba,preferFlat);
+        }
+      }
+      return {name:name,rootPc:rootPc,quality:parsed.quality,degreeLabel:degreeLabel(parsed),parsed:parsed};
+    }
+    function degreeLabel(parsed) {
+      var prefix = parsed.alt < 0 ? "♭" : parsed.alt > 0 ? "♯" : "";
+      var roman = ROMANS[parsed.degree-1];
+      if (parsed.quality === "min" || parsed.quality === "m7" || parsed.quality === "dim") roman = roman.toLowerCase();
+      if (parsed.quality === "dim") roman += "°";
+      else if (parsed.quality === "7") roman += "7";
+      else if (parsed.quality === "maj7") roman += "maj7";
+      else if (parsed.quality === "m7") roman += "7";
+      else if (parsed.quality === "sus2") roman += "sus2";
+      else if (parsed.quality === "sus4") roman += "sus4";
+      else if (parsed.quality === "add9") roman += "add9";
+      else if (parsed.quality === "6") roman += "6";
+      else if (parsed.quality === "m6") roman += "6";
+      if (parsed.bass) roman += "/" + parsed.bass;
+      return prefix + roman;
+    }
+
+    function getPatternList(mode,level,style) {
+      var byStyle = PATTERNS[mode][level];
+      return byStyle[style] || byStyle.pop || Object.keys(byStyle).map(function(k){return byStyle[k];})[0];
+    }
+    function generateProgression(advance) {
+      var keyPc = Number($("flowKey").value);
+      var mode = $("flowMode").value;
+      var style = $("flowStyle").value;
+      var list = getPatternList(mode,state.level,style);
+      if (advance) state.patternIndex = mod(state.patternIndex+1,list.length);
+      else state.patternIndex = mod(state.patternIndex,list.length);
+      state.pattern = list[state.patternIndex];
+      state.progression = state.pattern.tokens.map(function(token){ return tokenChord(token,keyPc,mode); });
+      renderProgression(style);
+      saveDraft();
+      return state.progression;
+    }
+    function renderProgression(style) {
+      var strip = $("progressionStrip");
+      strip.innerHTML = "";
+      state.progression.forEach(function(chord,index){
+        var button = document.createElement("button");
+        button.type = "button";
+        button.className = "chord-card";
+        button.dataset.beat = String(index+1);
+        button.setAttribute("aria-label","查看 "+chord.name+" 指法");
+        button.innerHTML = '<span class="degree">'+escapeHtml(chord.degreeLabel)+'</span><strong>'+escapeHtml(chord.name)+'</strong><small>第 '+(index+1)+' 小节 · 点击看指法</small>';
+        button.addEventListener("click",function(){
+          setChord(chord.rootPc,chord.quality);
+          switchView("chord");
+        });
+        strip.appendChild(button);
+      });
+      var meta = LEVEL_META[state.level];
+      $("patternLevel").textContent = meta.en + " · " + STYLE_ZH[style];
+      $("patternName").textContent = state.pattern.name;
+      $("patternDegrees").textContent = state.pattern.tokens.join(" — ");
+      $("meterText").textContent = "4/4";
+      $("strumText").textContent = meta.strum;
+      $("tempoText").textContent = meta.tempo;
+      $("patternTip").textContent = state.pattern.feel + "。"+meta.tip;
+    }
+
+    function setChord(rootPc,quality) {
+      $("chordRoot").value = String(rootPc);
+      $("chordQuality").value = quality in QUALITY_INFO ? quality : "maj";
+      state.voicingIndex = 0;
+      renderChord();
+    }
+
+    function tokenizeLyrics(line) {
+      var out = [];
+      var buffer = "";
+      Array.from(line.trim()).forEach(function(ch) {
+        if (/[\u3400-\u9fff]/.test(ch)) {
+          if (buffer) { out.push(buffer); buffer=""; }
+          out.push(ch);
+        } else if (/[A-Za-z0-9]/.test(ch)) {
+          buffer += ch;
+        } else if (/\s/.test(ch)) {
+          if (buffer) { out.push(buffer); buffer=""; }
+        } else {
+          if (buffer) { out.push(buffer); buffer=""; }
+          if (out.length) out[out.length-1] += ch;
+        }
+      });
+      if (buffer) out.push(buffer);
+      return out;
+    }
+    function hashString(text) {
+      var h = 2166136261;
+      for (var i=0;i<text.length;i++) {
+        h ^= text.charCodeAt(i);
+        h = Math.imul(h,16777619);
+      }
+      return h >>> 0;
+    }
+    function seeded(seed) {
+      var x = seed || 123456789;
+      return function() {
+        x ^= x << 13; x ^= x >>> 17; x ^= x << 5;
+        return (x >>> 0) / 4294967296;
+      };
+    }
+    function degreeToneSet(parsed,mode) {
+      var rootDegree = parsed.degree;
+      var third = mod(rootDegree-1+2,7)+1;
+      var fifth = mod(rootDegree-1+4,7)+1;
+      var set = [rootDegree,third,fifth];
+      if (parsed.quality === "7" || parsed.quality === "m7" || parsed.quality === "maj7") set.push(mod(rootDegree-1+6,7)+1);
+      return set;
+    }
+    function melodyForBar(tokens,chord,random,lastDegree) {
+      var tones = degreeToneSet(chord.parsed,$("arrangeMode").value);
+      var notes = [];
+      tokens.forEach(function(tok,index) {
+        var degree;
+        if (index === 0) degree = tones[Math.floor(random()*Math.min(tones.length,3))];
+        else if (index === tokens.length-1 && random() > .4) degree = tones[Math.floor(random()*tones.length)];
+        else {
+          var steps = [-1,0,1,1,-1,2,-2];
+          degree = mod((lastDegree || tones[0])-1 + steps[Math.floor(random()*steps.length)],7)+1;
+          if (index % 2 === 0 && random()>.45) degree = tones[Math.floor(random()*tones.length)];
+        }
+        lastDegree = degree;
+        notes.push(String(degree));
+      });
+      while (notes.length < 4) notes.push("-");
+      return {notes:notes,last:lastDegree};
+    }
+    function splitBars(tokens) {
+      var bars = [];
+      for (var i=0;i<tokens.length;i+=4) bars.push(tokens.slice(i,i+4));
+      return bars.length ? bars : [[]];
+    }
+    function normalizeManualBars(line,barCount) {
+      var parts = line.split("|").map(function(x){return x.trim();}).filter(Boolean);
+      if (!parts.length && line.trim()) parts=[line.trim()];
+      while (parts.length < barCount) parts.push("-");
+      return parts.slice(0,barCount);
+    }
+    function displayKeyName(keyPc,mode) {
+      return nameFor(keyPc,!!FLAT_KEYS[keyPc]) + (mode==="minor" ? " 小调" : " 大调");
+    }
+
+    function generateScore() {
+      var lyrics = $("lyricsInput").value.trim();
+      if (!lyrics) {
+        showToast("请先输入歌词");
+        $("lyricsInput").focus();
+        return "";
+      }
+      var title = $("songTitle").value.trim() || "未命名的歌";
+      var keyPc = Number($("arrangeKey").value);
+      var mode = $("arrangeMode").value;
+      var style = $("arrangeStyle").value;
+      var level = $("arrangeLevel").value;
+      var source = document.querySelector('input[name="melodySource"]:checked').value;
+      var manualLines = $("melodyInput").value.split(/\r?\n/).filter(function(x){return x.trim() && !/^\s*\[.*\]\s*$/.test(x);});
+      if (source === "manual" && manualLines.length === 0) {
+        showToast("请粘贴数字旋律");
+        $("melodyInput").focus();
+        return "";
+      }
+      var list = getPatternList(mode,level,style);
+      var pattern = list[0];
+      var progression = pattern.tokens.map(function(token){return tokenChord(token,keyPc,mode);});
+      var random = seeded(hashString(title+"|"+lyrics+"|"+keyPc+"|"+style+"|"+level));
+      var lines = lyrics.split(/\r?\n/);
+      var out = [];
+      out.push(title);
+      out.push("1 = "+displayKeyName(keyPc,mode)+"    4/4    "+STYLE_ZH[style]+" · "+LEVEL_META[level].zh);
+      out.push("速度："+LEVEL_META[level].tempo+"    扫弦："+LEVEL_META[level].strum);
+      out.push("和弦走向："+progression.map(function(x){return x.name;}).join(" — ")+"    级数："+pattern.tokens.join(" — "));
+      out.push("");
+      var lyricIndex=0, sectionCount=0, lastDegree=1;
+      lines.forEach(function(line) {
+        var trimmed=line.trim();
+        if (!trimmed) { out.push(""); return; }
+        if (/^\[.*\]$/.test(trimmed) || /^【.*】$/.test(trimmed)) {
+          out.push(trimmed);
+          sectionCount += 1;
+          return;
+        }
+        if (lyricIndex===0 && sectionCount===0) out.push("[主歌]");
+        var tokens=tokenizeLyrics(trimmed);
+        var bars=splitBars(tokens);
+        var chordNames=[];
+        var noteBars=[];
+        var lyricBars=[];
+        var manualBars=source==="manual" ? normalizeManualBars(manualLines[lyricIndex] || "",bars.length) : [];
+        bars.forEach(function(bar,i) {
+          var chord=progression[i%progression.length];
+          chordNames.push(chord.name);
+          lyricBars.push(bar.join(" "));
+          if (source==="manual") noteBars.push(manualBars[i] || "-");
+          else {
+            var melody=melodyForBar(bar,chord,random,lastDegree);
+            lastDegree=melody.last;
+            noteBars.push(melody.notes.join(" "));
+          }
+        });
+        out.push("和弦 | "+chordNames.join(" | ")+" |");
+        out.push("简谱 | "+noteBars.join(" | ")+" |");
+        out.push("歌词 | "+lyricBars.join(" | ")+" |");
+        out.push("");
+        lyricIndex += 1;
+      });
+      out.push("演奏提示："+LEVEL_META[level].tip);
+      out.push(source==="auto" ? "注：本旋律为根据歌词与和声自动创作的草稿，每个数字暂按一拍理解，请按语气调整时值与八度。" : "注：旋律来自你的输入；请核对小节、节奏、八度与原曲授权。");
+      state.scoreText=out.join("\n");
+      $("scoreOutput").textContent=state.scoreText;
+      $("scoreOutput").classList.remove("score-empty");
+      $("scoreStatus").textContent="已生成 · "+lyricIndex+" 行歌词";
+      saveDraft();
+      return state.scoreText;
+    }
+
+    function escapeHtml(text) {
+      return String(text).replace(/[&<>"']/g,function(ch){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch];});
+    }
+    function switchView(name) {
+      document.querySelectorAll(".view").forEach(function(v){v.classList.toggle("active",v.id===name+"-view");});
+      document.querySelectorAll(".tab").forEach(function(t){t.setAttribute("aria-selected",String(t.dataset.view===name));});
+      try { history.replaceState(null,"","#"+name); } catch(e) {}
+      window.scrollTo({top:0,behavior:"smooth"});
+    }
+    function showToast(message) {
+      var toast=$("toast");
+      toast.textContent=message;
+      toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer=setTimeout(function(){toast.classList.remove("show");},1800);
+    }
+    function copyText(text,label) {
+      if (!text) { showToast("还没有可复制的内容"); return; }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function(){showToast(label || "已复制");}).catch(function(){fallbackCopy(text,label);});
+      } else fallbackCopy(text,label);
+    }
+    function fallbackCopy(text,label) {
+      var area=document.createElement("textarea");
+      area.value=text; area.style.position="fixed"; area.style.opacity="0";
+      document.body.appendChild(area); area.select();
+      try { document.execCommand("copy"); showToast(label || "已复制"); } catch(e){ showToast("复制失败，请手动选择"); }
+      area.remove();
+    }
+    function downloadText() {
+      if (!state.scoreText) { showToast("请先生成简谱"); return; }
+      var blob=new Blob([state.scoreText],{type:"text/plain;charset=utf-8"});
+      var url=URL.createObjectURL(blob);
+      var a=document.createElement("a");
+      var title=($("songTitle").value.trim()||"和弦简谱").replace(/[\\/:*?"<>|]/g,"-");
+      a.href=url; a.download=title+"-带和弦简谱.txt"; a.click();
+      setTimeout(function(){URL.revokeObjectURL(url);},500);
+    }
+
+    function audioContext() {
+      var Ctx=window.AudioContext||window.webkitAudioContext;
+      if (!Ctx) return null;
+      if (!audioContext.ctx) audioContext.ctx=new Ctx();
+      return audioContext.ctx;
+    }
+    function pluckVoicing(frets,startTime) {
+      var ctx=audioContext();
+      if (!ctx) { showToast("当前浏览器不支持试听"); return; }
+      if (ctx.state==="suspended") ctx.resume();
+      frets.forEach(function(fret,i) {
+        if (fret<0) return;
+        var midi=[40,45,50,55,59,64][i]+fret;
+        var freq=440*Math.pow(2,(midi-69)/12);
+        var t=(startTime||ctx.currentTime)+i*.055;
+        var osc=ctx.createOscillator();
+        var gain=ctx.createGain();
+        var filter=ctx.createBiquadFilter();
+        osc.type=i<3?"triangle":"sine";
+        osc.frequency.setValueAtTime(freq,t);
+        filter.type="lowpass"; filter.frequency.setValueAtTime(2200,t); filter.Q.value=.7;
+        gain.gain.setValueAtTime(.0001,t);
+        gain.gain.exponentialRampToValueAtTime(.13,t+.012);
+        gain.gain.exponentialRampToValueAtTime(.0001,t+1.25);
+        osc.connect(filter).connect(gain).connect(ctx.destination);
+        osc.start(t); osc.stop(t+1.35);
+      });
+    }
+    function playCurrentChord() {
+      var frets=state.voicings[state.voicingIndex]||[];
+      pluckVoicing(frets);
+    }
+    function playFlow() {
+      var ctx=audioContext();
+      if (!ctx) return;
+      var now=ctx.currentTime+.05;
+      state.progression.slice(0,8).forEach(function(chord,i){
+        var voicings=getVoicings(chord.rootPc,chord.quality,!!FLAT_KEYS[chord.rootPc]);
+        pluckVoicing(voicings[0],now+i*1.08);
+      });
+    }
+
+    function populateSelects() {
+      ["chordRoot","flowKey","arrangeKey"].forEach(function(id){
+        var select=$(id);
+        KEY_OPTIONS.forEach(function(item){
+          var option=document.createElement("option");
+          option.value=String(item[1]); option.textContent=item[0];
+          select.appendChild(option);
+        });
+      });
+      Object.keys(QUALITY_INFO).forEach(function(key){
+        var option=document.createElement("option");
+        option.value=key; option.textContent=(QUALITY_INFO[key].suffix||"Major")+" · "+QUALITY_INFO[key].label;
+        $("chordQuality").appendChild(option);
+      });
+      var quick=[["C",0,"maj"],["G",7,"maj"],["D",2,"maj"],["A",9,"maj"],["E",4,"maj"],["Am",9,"min"],["Em",4,"min"],["Dm",2,"min"],["F",5,"maj"],["B7",11,"7"]];
+      quick.forEach(function(item){
+        var b=document.createElement("button");
+        b.type="button"; b.className="chip"; b.textContent=item[0];
+        b.addEventListener("click",function(){setChord(item[1],item[2]);});
+        $("quickChords").appendChild(b);
+      });
+    }
+    function syncArrangerFromFlow() {
+      $("arrangeKey").value=$("flowKey").value;
+      $("arrangeMode").value=$("flowMode").value;
+      $("arrangeStyle").value=$("flowStyle").value;
+      $("arrangeLevel").value=state.level;
+    }
+    function saveDraft() {
+      try {
+        localStorage.setItem("chordWorkshopDraft",JSON.stringify({
+          chordRoot:$("chordRoot").value,
+          chordQuality:$("chordQuality").value,
+          flowKey:$("flowKey").value,
+          flowMode:$("flowMode").value,
+          flowStyle:$("flowStyle").value,
+          level:state.level,
+          songTitle:$("songTitle").value,
+          lyrics:$("lyricsInput").value,
+          arrangeKey:$("arrangeKey").value,
+          arrangeMode:$("arrangeMode").value,
+          arrangeStyle:$("arrangeStyle").value,
+          arrangeLevel:$("arrangeLevel").value,
+          melody:$("melodyInput").value,
+          melodySource:document.querySelector('input[name="melodySource"]:checked').value,
+          score:state.scoreText
+        }));
+      } catch(e) {}
+    }
+    function loadDraft() {
+      try {
+        var raw=localStorage.getItem("chordWorkshopDraft");
+        if (!raw) return;
+        var d=JSON.parse(raw);
+        if (d.chordRoot!=null) $("chordRoot").value=d.chordRoot;
+        if (d.chordQuality) $("chordQuality").value=d.chordQuality;
+        if (d.flowKey!=null) $("flowKey").value=d.flowKey;
+        if (d.flowMode) $("flowMode").value=d.flowMode;
+        if (d.flowStyle) $("flowStyle").value=d.flowStyle;
+        if (d.level && LEVEL_META[d.level]) state.level=d.level;
+        if (d.songTitle) $("songTitle").value=d.songTitle;
+        if (d.lyrics) $("lyricsInput").value=d.lyrics;
+        if (d.arrangeKey!=null) $("arrangeKey").value=d.arrangeKey;
+        if (d.arrangeMode) $("arrangeMode").value=d.arrangeMode;
+        if (d.arrangeStyle) $("arrangeStyle").value=d.arrangeStyle;
+        if (d.arrangeLevel) $("arrangeLevel").value=d.arrangeLevel;
+        if (d.melody) $("melodyInput").value=d.melody;
+        if (d.melodySource) {
+          var radio=document.querySelector('input[name="melodySource"][value="'+d.melodySource+'"]');
+          if (radio) radio.checked=true;
+        }
+        if (d.score) {
+          state.scoreText=d.score;
+          $("scoreOutput").textContent=d.score;
+          $("scoreOutput").classList.remove("score-empty");
+          $("scoreStatus").textContent="已恢复上次草稿";
+        }
+      } catch(e) {}
+    }
+
+    function bindEvents() {
+      document.querySelectorAll(".tab").forEach(function(tab){tab.addEventListener("click",function(){switchView(tab.dataset.view);});});
+      $("chordRoot").addEventListener("change",function(){state.voicingIndex=0;renderChord();});
+      $("chordQuality").addEventListener("change",function(){state.voicingIndex=0;renderChord();});
+      $("nextVoicing").addEventListener("click",function(){state.voicingIndex=mod(state.voicingIndex+1,state.voicings.length);renderChord();});
+      $("playChord").addEventListener("click",playCurrentChord);
+      $("sendToFlow").addEventListener("click",function(){$("flowKey").value=String(state.chordRoot);generateProgression(false);switchView("progression");});
+      ["flowKey","flowMode","flowStyle"].forEach(function(id){$(id).addEventListener("change",function(){state.patternIndex=0;generateProgression(false);});});
+      $("levelPicker").addEventListener("click",function(e){
+        var button=e.target.closest("button[data-level]");
+        if (!button) return;
+        state.level=button.dataset.level; state.patternIndex=0;
+        document.querySelectorAll("#levelPicker button").forEach(function(b){b.classList.toggle("active",b===button);});
+        generateProgression(false);
+      });
+      $("randomProgression").addEventListener("click",function(){generateProgression(true);});
+      $("useInArranger").addEventListener("click",function(){syncArrangerFromFlow();switchView("arranger");});
+      $("copyProgression").addEventListener("click",function(){
+        copyText(state.progression.map(function(x){return x.name;}).join(" — ")+" | "+state.pattern.tokens.join(" — "),"走向已复制");
+      });
+      $("playProgression").addEventListener("click",playFlow);
+      document.querySelectorAll('input[name="melodySource"]').forEach(function(radio){
+        radio.addEventListener("change",function(){
+          $("melodyField").classList.toggle("hidden",radio.value!=="manual"||!radio.checked);
+          saveDraft();
+        });
+      });
+      $("generateScore").addEventListener("click",generateScore);
+      $("copyScore").addEventListener("click",function(){copyText(state.scoreText,"简谱已复制");});
+      $("downloadScore").addEventListener("click",downloadText);
+      $("printScore").addEventListener("click",function(){if(!state.scoreText){showToast("请先生成简谱");return;}window.print();});
+      $("loadExample").addEventListener("click",function(){
+        $("songTitle").value="远方仍有光";
+        $("lyricsInput").value="[主歌]\n风吹过安静的街道\n脚步在黎明里轻响\n\n[副歌]\n远方仍有温柔的光\n带我穿过漫长夜晚";
+        showToast("示例已载入");
+        saveDraft();
+      });
+      ["songTitle","lyricsInput","melodyInput","arrangeKey","arrangeMode","arrangeStyle","arrangeLevel"].forEach(function(id){
+        $(id).addEventListener("input",saveDraft);
+        $(id).addEventListener("change",saveDraft);
+      });
+      window.addEventListener("hashchange",function(){
+        var name=location.hash.replace("#","");
+        if (["chord","progression","arranger"].indexOf(name)>=0) switchView(name);
+      });
+    }
+
+    function registerWebMCP() {
+      var context=document.modelContext;
+      if (!context || typeof context.registerTool!=="function") return;
+      var tools=[
+        {
+          name:"find_guitar_chord",
+          title:"查找吉他和弦",
+          description:"显示指定根音与类型的六弦吉他指法，并返回当前推荐把位。",
+          inputSchema:{type:"object",properties:{rootPc:{type:"integer",minimum:0,maximum:11},quality:{type:"string",enum:Object.keys(QUALITY_INFO)}},required:["rootPc","quality"],additionalProperties:false},
+          annotations:{readOnlyHint:false,untrustedContentHint:false},
+          execute:function(input){
+            if(!input||!Number.isInteger(input.rootPc)||input.rootPc<0||input.rootPc>11||!QUALITY_INFO[input.quality]) throw new Error("Invalid chord input");
+            setChord(input.rootPc,input.quality); switchView("chord");
+            return {chord:$("chordName").textContent,frets:state.voicings[0].slice()};
+          }
+        },
+        {
+          name:"generate_song_progression",
+          title:"生成和弦走向",
+          description:"按调、调式、风格和难度生成并显示一组可弹奏的歌曲和弦走向。",
+          inputSchema:{type:"object",properties:{keyPc:{type:"integer",minimum:0,maximum:11},mode:{type:"string",enum:["major","minor"]},style:{type:"string",enum:Object.keys(STYLE_ZH)},level:{type:"string",enum:Object.keys(LEVEL_META)}},required:["keyPc","mode","style","level"],additionalProperties:false},
+          annotations:{readOnlyHint:false,untrustedContentHint:false},
+          execute:function(input){
+            if(!input||!Number.isInteger(input.keyPc)||input.keyPc<0||input.keyPc>11||!PATTERNS[input.mode]||!STYLE_ZH[input.style]||!LEVEL_META[input.level]) throw new Error("Invalid progression input");
+            $("flowKey").value=String(input.keyPc); $("flowMode").value=input.mode; $("flowStyle").value=input.style; state.level=input.level; state.patternIndex=0;
+            document.querySelectorAll("#levelPicker button").forEach(function(b){b.classList.toggle("active",b.dataset.level===state.level);});
+            generateProgression(false); switchView("progression");
+            return {name:state.pattern.name,chords:state.progression.map(function(x){return x.name;}),degrees:state.pattern.tokens.slice()};
+          }
+        },
+        {
+          name:"arrange_lyrics_to_numbered_score",
+          title:"歌词配和弦简谱",
+          description:"把歌词写入编配区，按指定参数生成原创数字旋律与和弦简谱草案。",
+          inputSchema:{type:"object",properties:{title:{type:"string"},lyrics:{type:"string",minLength:1},keyPc:{type:"integer",minimum:0,maximum:11},mode:{type:"string",enum:["major","minor"]},style:{type:"string",enum:Object.keys(STYLE_ZH)},level:{type:"string",enum:Object.keys(LEVEL_META)}},required:["lyrics","keyPc","mode","style","level"],additionalProperties:false},
+          annotations:{readOnlyHint:false,untrustedContentHint:true},
+          execute:function(input){
+            if(!input||typeof input.lyrics!=="string"||!input.lyrics.trim()||!Number.isInteger(input.keyPc)||!PATTERNS[input.mode]||!STYLE_ZH[input.style]||!LEVEL_META[input.level]) throw new Error("Invalid arrangement input");
+            $("songTitle").value=input.title||"未命名的歌"; $("lyricsInput").value=input.lyrics; $("arrangeKey").value=String(input.keyPc); $("arrangeMode").value=input.mode; $("arrangeStyle").value=input.style; $("arrangeLevel").value=input.level;
+            document.querySelector('input[name="melodySource"][value="auto"]').checked=true; $("melodyField").classList.add("hidden");
+            switchView("arranger");
+            return {title:$("songTitle").value,score:generateScore()};
+          }
+        }
+      ];
+      tools.forEach(function(tool){try{Promise.resolve(context.registerTool(tool)).catch(function(){});}catch(e){}});
+    }
+
+    function init() {
+      populateSelects();
+      loadDraft();
+      bindEvents();
+      document.querySelectorAll("#levelPicker button").forEach(function(b){b.classList.toggle("active",b.dataset.level===state.level);});
+      var checked=document.querySelector('input[name="melodySource"]:checked');
+      $("melodyField").classList.toggle("hidden",!checked||checked.value!=="manual");
+      renderChord();
+      generateProgression(false);
+      registerWebMCP();
+      var initial=location.hash.replace("#","");
+      if (["chord","progression","arranger"].indexOf(initial)>=0) switchView(initial);
+    }
+    init();
+  })();
+  </script>
+</body>
+</html>
